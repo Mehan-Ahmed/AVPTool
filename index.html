@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aviator Prediction Tool</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f45d48, #ff6e7f);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        h1 {
+            color: #ff3d00;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #666;
+            font-size: 15px;
+            margin: 10px 0;
+        }
+
+        .input-group {
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        label {
+            font-size: 16px;
+            color: #ff3d00;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 10px;
+            border: 1px solid #ff8a65;
+            background-color: #fce4ec;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #ff3d00;
+            outline: none;
+            background-color: #ffffff;
+        }
+
+        button {
+            padding: 12px 25px;
+            border: none;
+            background-color: #ff3d00;
+            color: white;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+
+        button#resetBtn {
+            background-color: #e53935;
+        }
+
+        #previousResults {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff3d00;
+        }
+
+        #predictionOutput {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff3d00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-paper-plane"></i> Aviator Prediction Tool</h1>
+        <p>Enter up to 6 previous results:</p>
+
+        <!-- Multiple Input Fields (6 input boxes) -->
+        <div class="input-group">
+            <label for="result1">Result 1:</label>
+            <input type="text" id="result1" placeholder="Enter result 1" required>
+
+            <label for="result2">Result 2:</label>
+            <input type="text" id="result2" placeholder="Enter result 2" required>
+
+            <label for="result3">Result 3:</label>
+            <input type="text" id="result3" placeholder="Enter result 3" required>
+
+            <label for="result4">Result 4:</label>
+            <input type="text" id="result4" placeholder="Enter result 4">
+
+            <label for="result5">Result 5:</label>
+            <input type="text" id="result5" placeholder="Enter result 5">
+
+            <label for="result6">Result 6:</label>
+            <input type="text" id="result6" placeholder="Enter result 6">
+        </div>
+
+        <!-- Buttons -->
+        <button id="predictBtn"><i class="fas fa-search"></i> Predict Next Result</button>
+        <button id="resetBtn" style="display:none;"><i class="fas fa-undo"></i> Reset</button>
+
+        <!-- Display Section -->
+        <p id="previousResults">Previous Results: </p>
+        <p id="predictionOutput"></p>
+    </div>
+
+    <script>
+        document.getElementById('predictBtn').addEventListener('click', predictNextResult);
+
+        function isValidNumber(value) {
+            let number = parseFloat(value);
+            return !isNaN(number) && number >= 0 && number <= 100;
+        }
+
+        function predictNextResult() {
+            let results = [
+                document.getElementById('result1').value.trim(),
+                document.getElementById('result2').value.trim(),
+                document.getElementById('result3').value.trim(),
+                document.getElementById('result4').value.trim(),
+                document.getElementById('result5').value.trim(),
+                document.getElementById('result6').value.trim()
+            ];
+
+            results = results.filter(result => isValidNumber(result)).map(result => parseFloat(result));
+
+            if (results.length < 3) {
+                alert('Please enter at least 3 valid results.');
+                return;
+            }
+
+            // Send results to server for prediction
+            fetch('/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ results: results })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    document.getElementById('previousResults').innerText = `Previous Results: ${results.join(' | ')}`;
+                    document.getElementById('predictionOutput').innerText = 
+                        `Predicted Next Result: ${data.predicted_result.toFixed(2)} (Confidence: ${data.confidence}%)`;
+
+                    document.getElementById('resetBtn').style.display = 'inline-block';
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            document.getElementById('previousResults').innerText = 'Previous Results: ';
+            document.getElementById('predictionOutput').innerText = '';
+            document.getElementById('resetBtn').style.display = 'none';
+        });
+    </script>
+</body>
+  </html>
